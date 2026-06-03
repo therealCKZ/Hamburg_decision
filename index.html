@@ -1,844 +1,805 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Search, MapPin, Euro, Coffee, Dumbbell, Music, Car, Bike, 
-  BookOpen, GlassWater, Users, Baby, ChevronRight, Heart, 
-  Map, List, Compass, X, GitCompare, Check, ExternalLink, Info, Sparkles 
-} from 'lucide-react';
-
-// 宿舍資料建檔與座標配置 (用於模擬地圖定位)
-const dormitories = [
-  { id: 1, name: 'Allermöhe', minPrice: 339, maxPrice: 385, vibe: '大自然/綠地', convenience: '佳', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '環境優美且交通便利，附近有公園、mall、超市與藥局。', mapX: 85, mapY: 78, zone: '東南區 (Bergedorf 附近)' },
-  { id: 2, name: 'Amalie', minPrice: 318, maxPrice: 453, vibe: '市中心/鬧區', convenience: '極佳', special: '', facilities: ['腳踏車停車位'], desc: '漢堡大學旁，市中心鬧區，食物、郵局、銀行、超市應有盡有。', mapX: 48, mapY: 42, zone: '市中心 (UHH校區)' },
-  { id: 3, name: 'Armgartstraße', minPrice: 355, maxPrice: 355, vibe: '市中心/鬧區', convenience: '佳', special: '限女性', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '腳踏車停車位'], desc: '女性限定。附近有餐廳街、超市與銀行。', mapX: 56, mapY: 40, zone: '市中心 (Alster湖東側)' },
-  { id: 4, name: 'Berliner Tor', minPrice: 380, maxPrice: 460, vibe: '近校區', convenience: '普通', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '腳踏車停車位'], desc: '緊鄰 HAW 校區，附近有超市與麵包店，餐廳街需稍微步行。', mapX: 58, mapY: 48, zone: '近市區 (HAW校區)' },
-  { id: 5, name: 'Bornstraße', minPrice: 435, maxPrice: 890, vibe: '近校區', convenience: '普通', special: '攜子女性', facilities: ['學習空間'], desc: '專為有小孩的女性學生設計，設有兒童遊戲室。', mapX: 46, mapY: 40, zone: '市中心 (UHH校區)' },
-  { id: 6, name: 'Die Burse', minPrice: 329, maxPrice: 436, vibe: '近校區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '鄰近 CS (資訊) 系所。附近較少商店，超市需走 10 分鐘。', mapX: 32, mapY: 30, zone: '西北區 (Stellingen校區)' },
-  { id: 7, name: 'Esther Bejarano', minPrice: 395, maxPrice: 479, vibe: '大自然/綠地', convenience: '較差', special: '音樂專長', facilities: ['休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '適合音樂系學生，有多間配備鋼琴的音樂室。', mapX: 40, mapY: 65, zone: '西南區 (Elbe河南岸)' },
-  { id: 8, name: 'Europa- und Georgi-Haus', minPrice: 380, maxPrice: 526, vibe: '大自然/綠地', convenience: '普通', special: '', facilities: ['酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位'], desc: '門口就是 Stadtpark，附近有購物廣場，餐廳需走一小段。', mapX: 54, mapY: 26, zone: '北區 (Stadtpark旁)' },
-  { id: 9, name: 'Grindelallee', minPrice: 361, maxPrice: 475, vibe: '市中心/鬧區', convenience: '極佳', special: '', facilities: ['酒吧/交誼廳', '汽車停車位', '腳踏車停車位'], desc: '漢堡大學正隔壁。鬧區，食物、郵局、銀行走路 5 分鐘。', mapX: 47, mapY: 41, zone: '市中心 (UHH校區)' },
-  { id: 10, name: 'Gustav-Radbruch-Haus', minPrice: 310, maxPrice: 400, vibe: '近校區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '近 Berliner Tor，生活機能普通，超市需走 10 分鐘。', mapX: 61, mapY: 47, zone: '近市區 (HAW校區)' },
-  { id: 11, name: 'Hagenbeckstraße', minPrice: 345, maxPrice: 460, vibe: '大自然/綠地', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: 'Eimsbüttel 區，近動物園，餐廳街需走一下，超市 10 分鐘。', mapX: 35, mapY: 34, zone: '西北區 (Eimsbüttel)' },
-  { id: 12, name: 'Hammerbrook', minPrice: 450, maxPrice: 450, vibe: '市中心/鬧區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '腳踏車停車位'], desc: '近市區但機能稍微不便（超市需走 10 分鐘）。', mapX: 59, mapY: 52, zone: '近市區 (Hammerbrook)' },
-  { id: 13, name: 'Harburg', minPrice: 360, maxPrice: 360, vibe: '偏遠地區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間'], desc: '近 TU，位於 Harburg，距離漢堡市中心較遠。', mapX: 48, mapY: 88, zone: '南區 (TUHH校區)' },
-  { id: 14, name: 'Harburger-Häuser', minPrice: 330, maxPrice: 410, vibe: '偏遠地區', convenience: '較差', special: '', facilities: ['學習空間', '汽車停車位'], desc: '近 TU，Harburg 區。', mapX: 46, mapY: 90, zone: '南區 (TUHH校區)' },
-  { id: 15, name: 'Helmut Schmidt', minPrice: 451, maxPrice: 479, vibe: '市中心/鬧區', convenience: '較差', special: '獨立衛浴', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '腳踏車停車位'], desc: '位於 Hafencity，部分房型有獨立衛浴與小廚房。附近被河隔開，超市走 10 分鐘。', mapX: 52, mapY: 53, zone: '市中心 (Hafencity)' },
-  { id: 16, name: 'Kiwittsmoor', minPrice: 317, maxPrice: 414, vibe: '極偏遠', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間'], desc: '非常偏遠，環境清幽但超市需走 10 分鐘。', mapX: 48, mapY: 10, zone: '極北區 (鄰近 Norderstedt)' },
-  { id: 17, name: 'Lokstedt', minPrice: 381, maxPrice: 397, vibe: '近校區', convenience: '較差', special: '', facilities: ['酒吧/交誼廳', '音樂室', '腳踏車停車位'], desc: '近 UKE (醫學系)，附近較少設施與動物園。', mapX: 41, mapY: 31, zone: '西北區 (UKE校區)' },
-  { id: 18, name: 'Margaretha-Rothe-Haus', minPrice: 366, maxPrice: 380, vibe: '大自然/綠地', convenience: '普通', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '靠近 Stadtpark，有購物廣場與餐廳街（需稍微步行）。', mapX: 57, mapY: 28, zone: '北區 (Stadtpark旁)' },
-  { id: 19, name: 'Ottersbekallee', minPrice: 353, maxPrice: 353, vibe: '市中心/鬧區', convenience: '佳', special: '', facilities: ['酒吧/交誼廳'], desc: 'Eimsbüttel 中心，餐廳街食物多、超市、郵局齊全。', mapX: 40, mapY: 37, zone: '西北區 (Eimsbüttel)' },
-  { id: 20, name: 'Rahlstedt', minPrice: 374, maxPrice: 425, vibe: '極偏遠', convenience: '較差', special: '', facilities: ['健身房/運動', '酒吧/交誼廳'], desc: '空間寬敞但距離非常遠。', mapX: 88, mapY: 24, zone: '極東北區 (Rahlstedt)' },
-  { id: 21, name: 'Rudolf-Laun-Haus', minPrice: 400, maxPrice: 460, vibe: '近校區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '近 UKE 與公園綠地。', mapX: 38, mapY: 29, zone: '西北區 (UKE校區)' },
-  { id: 22, name: 'Sophie-Schoop-Haus', minPrice: 441, maxPrice: 487, vibe: '大自然/綠地', convenience: '佳', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '腳踏車停車位'], desc: '公園旁，有 mall (藥局、Edeka、penny、牙醫等)。', mapX: 82, mapY: 58, zone: '東區 (Neuallermöhe)' },
-  { id: 23, name: 'Triftstraße', minPrice: 377, maxPrice: 459, vibe: '極偏遠', convenience: '較差', special: '', facilities: ['酒吧/交誼廳', '腳踏車停車位'], desc: '非常遙遠 (Harburg)。', mapX: 44, mapY: 92, zone: '南區 (TUHH校區)' },
-  { id: 24, name: 'Unnastraße', minPrice: 345, maxPrice: 377, vibe: '市中心/鬧區', convenience: '佳', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: 'Eimsbüttel 區，生活機能佳，餐廳街、超市皆有。', mapX: 42, mapY: 36, zone: '西北區 (Eimsbüttel)' }
-];
-
-const allFacilities = ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'];
-const allVibes = ['市中心/鬧區', '近校區', '大自然/綠地', '偏遠地區', '極偏遠'];
-const allConvenience = ['極佳', '佳', '普通', '較差'];
-
-// 設施圖標對照表
-const facilityIcons = {
-  '健身房/運動': <Dumbbell size={14} />,
-  '休閒/運動': <Sparkles size={14} />,
-  '酒吧/交誼廳': <GlassWater size={14} />,
-  '音樂室': <Music size={14} />,
-  '學習空間': <BookOpen size={14} />,
-  '汽車停車位': <Car size={14} />,
-  '腳踏車停車位': <Bike size={14} />
-};
-
-export default function App() {
-  const [maxPrice, setMaxPrice] = useState(900);
-  const [selectedFacilities, setSelectedFacilities] = useState([]);
-  const [selectedVibe, setSelectedVibe] = useState('All');
-  const [selectedConvenience, setSelectedConvenience] = useState('All');
-  const [specialReq, setSpecialReq] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hamburg 宿舍篩選器</title>
   
-  // 檢視與互動狀態
-  const [activeTab, setActiveTab] = useState('list'); // 'list' | 'map'
-  const [favorites, setFavorites] = useState([]);
-  const [compareList, setCompareList] = useState([]);
-  const [selectedDormDetail, setSelectedDormDetail] = useState(null);
-
-  const toggleFacility = (facility) => {
-    setSelectedFacilities(prev => 
-      prev.includes(facility) 
-        ? prev.filter(f => f !== facility)
-        : [...prev, facility]
-    );
-  };
-
-  const toggleFavorite = (id) => {
-    setFavorites(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
-  const toggleCompare = (dorm) => {
-    setCompareList(prev => {
-      const isAlreadyAdded = prev.some(item => item.id === dorm.id);
-      if (isAlreadyAdded) {
-        return prev.filter(item => item.id !== dorm.id);
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0"
       }
-      if (prev.length >= 3) {
-        return prev; // 限制最多比較 3 間
-      }
-      return [...prev, dorm];
-    });
-  };
+    }
+  </script>
+  
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50">
+  <div id="root"></div>
 
-  const filteredDorms = useMemo(() => {
-    return dormitories.filter(dorm => {
-      // 關鍵字檢索 (名稱與描述)
-      if (searchQuery.trim() !== '') {
-        const query = searchQuery.toLowerCase();
-        const matchName = dorm.name.toLowerCase().includes(query);
-        const matchDesc = dorm.desc.toLowerCase().includes(query);
-        const matchZone = dorm.zone.toLowerCase().includes(query);
-        if (!matchName && !matchDesc && !matchZone) return false;
-      }
+  <script type="text/babel" data-type="module">
+    import React, { useState, useMemo } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { 
+      Search, MapPin, Euro, Coffee, Dumbbell, Music, Car, Bike, 
+      BookOpen, GlassWater, Users, Baby, ChevronRight, Heart, 
+      Map, List, Compass, X, GitCompare, Check, ExternalLink, Info, Sparkles 
+    } from 'lucide-react';
 
-      // 價格篩選
-      if (dorm.minPrice > maxPrice) return false;
+    const dormitories = [
+      { id: 1, name: 'Allermöhe', minPrice: 339, maxPrice: 385, vibe: '大自然/綠地', convenience: '佳', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '環境優美且交通便利，附近有公園、mall、超市與藥局。', mapX: 85, mapY: 78, zone: '東南區 (Bergedorf 附近)' },
+      { id: 2, name: 'Amalie', minPrice: 318, maxPrice: 453, vibe: '市中心/鬧區', convenience: '極佳', special: '', facilities: ['腳踏車停車位'], desc: '漢堡大學旁，市中心鬧區，食物、郵局、銀行、超市應有盡有。', mapX: 48, mapY: 42, zone: '市中心 (UHH校區)' },
+      { id: 3, name: 'Armgartstraße', minPrice: 355, maxPrice: 355, vibe: '市中心/鬧區', convenience: '佳', special: '限女性', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '腳踏車停車位'], desc: '女性限定。附近有餐廳街、超市與銀行。', mapX: 56, mapY: 40, zone: '市中心 (Alster湖東側)' },
+      { id: 4, name: 'Berliner Tor', minPrice: 380, maxPrice: 460, vibe: '近校區', convenience: '普通', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '腳踏車停車位'], desc: '緊鄰 HAW 校區，附近有超市與麵包店，餐廳街需稍微步行。', mapX: 58, mapY: 48, zone: '近市區 (HAW校區)' },
+      { id: 5, name: 'Bornstraße', minPrice: 435, maxPrice: 890, vibe: '近校區', convenience: '普通', special: '攜子女性', facilities: ['學習空間'], desc: '專為有小孩的女性學生設計，設有兒童遊戲室。', mapX: 46, mapY: 40, zone: '市中心 (UHH校區)' },
+      { id: 6, name: 'Die Burse', minPrice: 329, maxPrice: 436, vibe: '近校區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '鄰近 CS (資訊) 系所。附近較少商店，超市需走 10 分鐘。', mapX: 32, mapY: 30, zone: '西北區 (Stellingen校區)' },
+      { id: 7, name: 'Esther Bejarano', minPrice: 395, maxPrice: 479, vibe: '大自然/綠地', convenience: '較差', special: '音樂專長', facilities: ['休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '適合音樂系學生，有多間配備鋼琴的音樂室。', mapX: 40, mapY: 65, zone: '西南區 (Elbe河南岸)' },
+      { id: 8, name: 'Europa- und Georgi-Haus', minPrice: 380, maxPrice: 526, vibe: '大自然/綠地', convenience: '普通', special: '', facilities: ['酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位'], desc: '門口就是 Stadtpark，附近有購物廣場，餐廳需走一小段。', mapX: 54, mapY: 26, zone: '北區 (Stadtpark旁)' },
+      { id: 9, name: 'Grindelallee', minPrice: 361, maxPrice: 475, vibe: '市中心/鬧區', convenience: '極佳', special: '', facilities: ['酒吧/交誼廳', '汽車停車位', '腳踏車停車位'], desc: '漢堡大學正隔壁。鬧區，食物、郵局、銀行走路 5 分鐘。', mapX: 47, mapY: 41, zone: '市中心 (UHH校區)' },
+      { id: 10, name: 'Gustav-Radbruch-Haus', minPrice: 310, maxPrice: 400, vibe: '近校區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '近 Berliner Tor，生活機能普通，超市需走 10 分鐘。', mapX: 61, mapY: 47, zone: '近市區 (HAW校區)' },
+      { id: 11, name: 'Hagenbeckstraße', minPrice: 345, maxPrice: 460, vibe: '大自然/綠地', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: 'Eimsbüttel 區，近動物園，餐廳街需走一下，超市 10 分鐘。', mapX: 35, mapY: 34, zone: '西北區 (Eimsbüttel)' },
+      { id: 12, name: 'Hammerbrook', minPrice: 450, maxPrice: 450, vibe: '市中心/鬧區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '腳踏車停車位'], desc: '近市區但機能稍微不便（超市需走 10 分鐘）。', mapX: 59, mapY: 52, zone: '近市區 (Hammerbrook)' },
+      { id: 13, name: 'Harburg', minPrice: 360, maxPrice: 360, vibe: '偏遠地區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間'], desc: '近 TU，位於 Harburg，距離漢堡市中心較遠。', mapX: 48, mapY: 88, zone: '南區 (TUHH校區)' },
+      { id: 14, name: 'Harburger-Häuser', minPrice: 330, maxPrice: 410, vibe: '偏遠地區', convenience: '較差', special: '', facilities: ['學習空間', '汽車停車位'], desc: '近 TU，Harburg 區。', mapX: 46, mapY: 90, zone: '南區 (TUHH校區)' },
+      { id: 15, name: 'Helmut Schmidt', minPrice: 451, maxPrice: 479, vibe: '市中心/鬧區', convenience: '較差', special: '獨立衛浴', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '腳踏車停車位'], desc: '位於 Hafencity，部分房型有獨立衛浴與小廚房。附近被河隔開，超市走 10 分鐘。', mapX: 52, mapY: 53, zone: '市中心 (Hafencity)' },
+      { id: 16, name: 'Kiwittsmoor', minPrice: 317, maxPrice: 414, vibe: '極偏遠', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間'], desc: '非常偏遠，環境清幽但超市需走 10 分鐘。', mapX: 48, mapY: 10, zone: '極北區 (鄰近 Norderstedt)' },
+      { id: 17, name: 'Lokstedt', minPrice: 381, maxPrice: 397, vibe: '近校區', convenience: '較差', special: '', facilities: ['酒吧/交誼廳', '音樂室', '腳踏車停車位'], desc: '近 UKE (醫學系)，附近較少設施與動物園。', mapX: 41, mapY: 31, zone: '西北區 (UKE校區)' },
+      { id: 18, name: 'Margaretha-Rothe-Haus', minPrice: 366, maxPrice: 380, vibe: '大自然/綠地', convenience: '普通', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '靠近 Stadtpark，有購物廣場與餐廳街（需稍微步行）。', mapX: 57, mapY: 28, zone: '北區 (Stadtpark旁)' },
+      { id: 19, name: 'Ottersbekallee', minPrice: 353, maxPrice: 353, vibe: '市中心/鬧區', convenience: '佳', special: '', facilities: ['酒吧/交誼廳'], desc: 'Eimsbüttel 中心，餐廳街食物多、超市、郵局齊全。', mapX: 40, mapY: 37, zone: '西北區 (Eimsbüttel)' },
+      { id: 20, name: 'Rahlstedt', minPrice: 374, maxPrice: 425, vibe: '極偏遠', convenience: '較差', special: '', facilities: ['健身房/運動', '酒吧/交誼廳'], desc: '空間寬敞但距離非常遠。', mapX: 88, mapY: 24, zone: '極東北區 (Rahlstedt)' },
+      { id: 21, name: 'Rudolf-Laun-Haus', minPrice: 400, maxPrice: 460, vibe: '近校區', convenience: '較差', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: '近 UKE 與公園綠地。', mapX: 38, mapY: 29, zone: '西北區 (UKE校區)' },
+      { id: 22, name: 'Sophie-Schoop-Haus', minPrice: 441, maxPrice: 487, vibe: '大自然/綠地', convenience: '佳', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '腳踏車停車位'], desc: '公園旁，有 mall (藥局、Edeka、penny、牙醫等)。', mapX: 82, mapY: 58, zone: '東區 (Neuallermöhe)' },
+      { id: 23, name: 'Triftstraße', minPrice: 377, maxPrice: 459, vibe: '極偏遠', convenience: '較差', special: '', facilities: ['酒吧/交誼廳', '腳踏車停車位'], desc: '非常遙遠 (Harburg)。', mapX: 44, mapY: 92, zone: '南區 (TUHH校區)' },
+      { id: 24, name: 'Unnastraße', minPrice: 345, maxPrice: 377, vibe: '市中心/鬧區', convenience: '佳', special: '', facilities: ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'], desc: 'Eimsbüttel 區，生活機能佳，餐廳街、超市皆有。', mapX: 42, mapY: 36, zone: '西北區 (Eimsbüttel)' }
+    ];
 
-      // 設施篩選
-      if (selectedFacilities.length > 0) {
-        const hasAllFacilities = selectedFacilities.every(f => dorm.facilities.includes(f));
-        if (!hasAllFacilities) return false;
-      }
+    const allFacilities = ['健身房/運動', '休閒/運動', '酒吧/交誼廳', '音樂室', '學習空間', '汽車停車位', '腳踏車停車位'];
+    const allVibes = ['市中心/鬧區', '近校區', '大自然/綠地', '偏遠地區', '極偏遠'];
+    const allConvenience = ['極佳', '佳', '普通', '較差'];
 
-      // 位置偏好篩選
-      if (selectedVibe !== 'All' && dorm.vibe !== selectedVibe) return false;
+    const facilityIcons = {
+      '健身房/運動': <Dumbbell size={14} />,
+      '休閒/運動': <Sparkles size={14} />,
+      '酒吧/交誼廳': <GlassWater size={14} />,
+      '音樂室': <Music size={14} />,
+      '學習空間': <BookOpen size={14} />,
+      '汽車停車位': <Car size={14} />,
+      '腳踏車停車位': <Bike size={14} />
+    };
 
-      // 機能偏好篩選
-      if (selectedConvenience !== 'All' && dorm.convenience !== selectedConvenience) return false;
+    function App() {
+      const [maxPrice, setMaxPrice] = useState(900);
+      const [selectedFacilities, setSelectedFacilities] = useState([]);
+      const [selectedVibe, setSelectedVibe] = useState('All');
+      const [selectedConvenience, setSelectedConvenience] = useState('All');
+      const [specialReq, setSpecialReq] = useState('All');
+      const [searchQuery, setSearchQuery] = useState('');
+      
+      const [activeTab, setActiveTab] = useState('list');
+      const [favorites, setFavorites] = useState([]);
+      const [compareList, setCompareList] = useState([]);
+      const [selectedDormDetail, setSelectedDormDetail] = useState(null);
 
-      // 特殊要求篩選
-      if (specialReq !== 'All') {
-        if (specialReq === '限女性' && dorm.special !== '限女性') return false;
-        if (specialReq === '攜子女性' && dorm.special !== '攜子女性') return false;
-        if (specialReq === '音樂專長' && dorm.special !== '音樂專長') return false;
-        if (specialReq === '獨立衛浴' && dorm.special !== '獨立衛浴') return false;
-      }
+      const toggleFacility = (facility) => {
+        setSelectedFacilities(prev => 
+          prev.includes(facility) 
+            ? prev.filter(f => f !== facility)
+            : [...prev, facility]
+        );
+      };
 
-      return true;
-    }).sort((a, b) => a.minPrice - b.minPrice);
-  }, [maxPrice, selectedFacilities, selectedVibe, selectedConvenience, specialReq, searchQuery]);
+      const toggleFavorite = (id) => {
+        setFavorites(prev => 
+          prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+      };
 
-  const resetFilters = () => {
-    setMaxPrice(900);
-    setSelectedFacilities([]);
-    setSelectedVibe('All');
-    setSelectedConvenience('All');
-    setSpecialReq('All');
-    setSearchQuery('');
-  };
+      const toggleCompare = (dorm) => {
+        setCompareList(prev => {
+          const isAlreadyAdded = prev.some(item => item.id === dorm.id);
+          if (isAlreadyAdded) {
+            return prev.filter(item => item.id !== dorm.id);
+          }
+          if (prev.length >= 3) {
+            return prev;
+          }
+          return [...prev, dorm];
+        });
+      };
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans antialiased">
-      {/* 頂部導航 */}
-      <header className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-              <Compass size={24} />
-            </span>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Hamburg Studierendenwerk</h1>
-          </div>
-          <p className="text-sm text-slate-500 mt-1 pl-1">德國漢堡學生宿舍篩選工具與分布導覽</p>
-        </div>
-        
-        {/* 切換檢視分頁 */}
-        <div className="flex items-center gap-2 self-stretch md:self-auto bg-slate-100 p-1 rounded-xl">
-          <button 
-            onClick={() => setActiveTab('list')}
-            className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'list' 
-                ? 'bg-white text-blue-600 shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <List size={16} /> 列表探索
-          </button>
-          <button 
-            onClick={() => setActiveTab('map')}
-            className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'map' 
-                ? 'bg-white text-blue-600 shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Map size={16} /> 地圖分佈
-          </button>
-        </div>
-      </header>
+      const filteredDorms = useMemo(() => {
+        return dormitories.filter(dorm => {
+          if (searchQuery.trim() !== '') {
+            const query = searchQuery.toLowerCase();
+            const matchName = dorm.name.toLowerCase().includes(query);
+            const matchDesc = dorm.desc.toLowerCase().includes(query);
+            const matchZone = dorm.zone.toLowerCase().includes(query);
+            if (!matchName && !matchDesc && !matchZone) return false;
+          }
+          if (dorm.minPrice > maxPrice) return false;
+          if (selectedFacilities.length > 0) {
+            const hasAllFacilities = selectedFacilities.every(f => dorm.facilities.includes(f));
+            if (!hasAllFacilities) return false;
+          }
+          if (selectedVibe !== 'All' && dorm.vibe !== selectedVibe) return false;
+          if (selectedConvenience !== 'All' && dorm.convenience !== selectedConvenience) return false;
+          if (specialReq !== 'All') {
+            if (specialReq === '限女性' && dorm.special !== '限女性') return false;
+            if (specialReq === '攜子女性' && dorm.special !== '攜子女性') return false;
+            if (specialReq === '音樂專長' && dorm.special !== '音樂專長') return false;
+            if (specialReq === '獨立衛浴' && dorm.special !== '獨立衛浴') return false;
+          }
+          return true;
+        }).sort((a, b) => a.minPrice - b.minPrice);
+      }, [maxPrice, selectedFacilities, selectedVibe, selectedConvenience, specialReq, searchQuery]);
 
-      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
-        
-        {/* 側邊篩選欄 */}
-        <aside className="w-full lg:w-[350px] bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-6 h-fit shrink-0">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-              篩選條件
-            </h2>
-            <button 
-              onClick={resetFilters}
-              className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
-            >
-              重設所有條件
-            </button>
-          </div>
+      const resetFilters = () => {
+        setMaxPrice(900);
+        setSelectedFacilities([]);
+        setSelectedVibe('All');
+        setSelectedConvenience('All');
+        setSpecialReq('All');
+        setSearchQuery('');
+      };
 
-          {/* 搜尋關鍵字 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700">搜尋關鍵字</label>
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="輸入宿舍名稱、位置、機能..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white transition-all"
-              />
-              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3 text-slate-400 hover:text-slate-600">
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 預算區塊 */}
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-                <Euro size={16} className="text-slate-500" /> 最大預算 (月租)
-              </label>
-              <span className="font-mono text-sm bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg font-bold">
-                €{maxPrice}
-              </span>
-            </div>
-            <input 
-              type="range" 
-              min="310" max="900" step="10" 
-              value={maxPrice} 
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-100 rounded-lg"
-            />
-            <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-              <span>€310</span>
-              <span>€900</span>
-            </div>
-          </div>
-
-          {/* 環境偏好 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-              <MapPin size={16} className="text-slate-500" /> 環境與氛圍
-            </label>
-            <select 
-              value={selectedVibe} 
-              onChange={(e) => setSelectedVibe(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="All">顯示全部環境</option>
-              {allVibes.map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </div>
-
-          {/* 生活機能 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-              <Coffee size={16} className="text-slate-500" /> 生活便利性
-            </label>
-            <select 
-              value={selectedConvenience} 
-              onChange={(e) => setSelectedConvenience(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="All">顯示所有便利度</option>
-              {allConvenience.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-
-          {/* 特殊群體需求 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-              <Users size={16} className="text-slate-500" /> 特殊需求房型
-            </label>
-            <select 
-              value={specialReq} 
-              onChange={(e) => setSpecialReq(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="All">無特定限制</option>
-              <option value="限女性">女性限定 (Armgartstraße)</option>
-              <option value="攜子女性">有孩童之女性 (Bornstraße)</option>
-              <option value="音樂專長">附帶鋼琴音樂室 (Esther Bejarano)</option>
-              <option value="獨立衛浴">附私人小衛浴與廚房 (Helmut Schmidt)</option>
-            </select>
-          </div>
-
-          {/* 必要公共設施 */}
-          <div className="flex flex-col gap-2.5">
-            <label className="text-sm font-semibold text-slate-700">公共與配套設施</label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {allFacilities.map(fac => {
-                const isSelected = selectedFacilities.includes(fac);
-                return (
-                  <button
-                    key={fac}
-                    onClick={() => toggleFacility(fac)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs text-left transition-all border flex items-center gap-1.5 ${
-                      isSelected 
-                        ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium' 
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className={isSelected ? 'text-blue-600' : 'text-slate-400'}>
-                      {facilityIcons[fac]}
-                    </span>
-                    <span className="truncate">{fac}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
-
-        {/* 右側展示區 */}
-        <main className="flex-1 flex flex-col gap-6">
-          
-          {/* 橫幅看板資訊 */}
-          {compareList.length > 0 && (
-            <div className="bg-slate-900 text-white px-5 py-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-md">
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-6 lg:p-8 font-sans antialiased">
+          <header className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+            <div>
               <div className="flex items-center gap-2">
-                <GitCompare size={20} className="text-blue-400" />
-                <div>
-                  <h4 className="font-semibold text-sm">比較欄位中 ({compareList.length}/3)</h4>
-                  <p className="text-xs text-slate-400">正在比較：{compareList.map(d => d.name).join(', ')}</p>
-                </div>
+                <span className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                  <Compass size={24} />
+                </span>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Hamburg Studierendenwerk</h1>
               </div>
-              <button 
-                onClick={() => setSelectedDormDetail({ compareMode: true })}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
-              >
-                開啟對照面板
-              </button>
+              <p className="text-sm text-slate-500 mt-1 pl-1">德國漢堡學生宿舍篩選工具與分布導覽</p>
             </div>
-          )}
-
-          {activeTab === 'list' ? (
-            /* ==================== 列表模式 ==================== */
-            <>
-              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-800 text-lg">
-                    {searchQuery || selectedFacilities.length > 0 || selectedVibe !== 'All' || selectedConvenience !== 'All' || specialReq !== 'All' ? '已篩選宿處' : '全部宿處清單'}
-                  </h3>
-                  <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                    {filteredDorms.length} 間
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400">由低價至高價排列</p>
-              </div>
-
-              {filteredDorms.length === 0 ? (
-                <div className="bg-white p-16 rounded-2xl border border-slate-100 text-center flex flex-col items-center justify-center text-slate-500 shadow-sm">
-                  <div className="p-4 bg-slate-50 rounded-full text-slate-300 mb-4">
-                    <Search size={36} />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-800">找不到相符的宿舍</h3>
-                  <p className="text-sm text-slate-400 mt-1 max-w-sm">
-                    試著調高月租預算上限、清空特定設施勾選，或將生活便利性改設為「顯示所有便利度」。
-                  </p>
-                  <button 
-                    onClick={resetFilters} 
-                    className="mt-5 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
-                  >
-                    重設過濾器
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {filteredDorms.map(dorm => {
-                    const isFav = favorites.includes(dorm.id);
-                    const isComparing = compareList.some(item => item.id === dorm.id);
-                    return (
-                      <div 
-                        key={dorm.id} 
-                        className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative"
-                      >
-                        {/* 頂部名稱與收藏 */}
-                        <div>
-                          <div className="flex justify-between items-start gap-4 mb-2">
-                            <div>
-                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
-                                {dorm.name}
-                              </h3>
-                              <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
-                                <MapPin size={10} /> {dorm.zone}
-                              </p>
-                            </div>
-                            
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button 
-                                onClick={() => toggleFavorite(dorm.id)}
-                                className={`p-2 rounded-full transition-colors ${
-                                  isFav 
-                                    ? 'bg-red-50 text-red-500 hover:bg-red-100' 
-                                    : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-                                }`}
-                                title="加入收藏"
-                              >
-                                <Heart size={16} fill={isFav ? "currentColor" : "none"} />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* 價格級距與機能標籤 */}
-                          <div className="flex flex-wrap gap-2 mb-3.5">
-                            <span className="text-xs font-mono font-bold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md">
-                              €{dorm.minPrice} {dorm.maxPrice > dorm.minPrice ? `~ ${dorm.maxPrice}` : '/月'}
-                            </span>
-                            <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">
-                              環境: {dorm.vibe}
-                            </span>
-                            <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${
-                              dorm.convenience === '極佳' || dorm.convenience === '佳' 
-                                ? 'bg-emerald-50 text-emerald-700' 
-                                : dorm.convenience === '普通' 
-                                ? 'bg-amber-50 text-amber-700' 
-                                : 'bg-rose-50 text-rose-700'
-                            }`}>
-                              機能: {dorm.convenience}
-                            </span>
-                            {dorm.special && (
-                              <span className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-semibold">
-                                {dorm.special}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* 說明文字 */}
-                          <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mb-5">
-                            {dorm.desc}
-                          </p>
-                        </div>
-
-                        {/* 底部卡片操作 */}
-                        <div className="border-t border-slate-100 pt-4 mt-auto">
-                          <div className="flex justify-between items-center">
-                            <button
-                              onClick={() => toggleCompare(dorm)}
-                              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
-                                isComparing 
-                                  ? 'bg-slate-900 text-white' 
-                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                              }`}
-                            >
-                              <GitCompare size={14} />
-                              {isComparing ? '已加入比較' : '加入對照'}
-                            </button>
-                            
-                            <button 
-                              onClick={() => setSelectedDormDetail(dorm)}
-                              className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-0.5"
-                            >
-                              詳細資訊 <ChevronRight size={14} />
-                            </button>
-                          </div>
-                        </div>
-
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          ) : (
-            /* ==================== 地圖模式 ==================== */
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col gap-5">
-              <div>
-                <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                  漢堡地理分布模擬圖
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">互動示意：圓圈表示學生宿處(點擊可檢視)，虛線色塊代表主要大專院校校區位置。</p>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* 地圖本體 */}
-                <div className="lg:col-span-2 relative w-full aspect-[4/3] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 select-none">
-                  
-                  {/* 主要河川 (Elbe河模擬) */}
-                  <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                    {/* Alster Lake */}
-                    <ellipse cx="50%" cy="38%" rx="20" ry="15" className="fill-slate-800" />
-                    {/* Elbe River */}
-                    <path d="M-10 320 C 150 320, 250 280, 500 280 C 650 280, 750 320, 900 320" fill="none" stroke="#1e293b" strokeWidth="24" strokeLinecap="round" />
-                    <path d="M-10 320 C 150 320, 250 280, 500 280 C 650 280, 750 320, 900 320" fill="none" stroke="#334155" strokeWidth="8" strokeLinecap="round" />
-                  </svg>
-
-                  {/* 核心校區標籤 */}
-                  <div className="absolute left-[47%] top-[39%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80">
-                    <span className="w-4 h-4 rounded-full border border-dashed border-blue-500 animate-ping absolute"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                    <span className="text-[10px] bg-slate-950/80 text-blue-300 px-1.5 py-0.5 rounded mt-1 font-mono">UHH (漢堡大學)</span>
-                  </div>
-
-                  <div className="absolute left-[58%] top-[45%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80">
-                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-                    <span className="text-[10px] bg-slate-950/80 text-indigo-300 px-1.5 py-0.5 rounded mt-1 font-mono">HAW (應用科學大)</span>
-                  </div>
-
-                  <div className="absolute left-[47%] top-[83%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                    <span className="text-[10px] bg-slate-950/80 text-amber-300 px-1.5 py-0.5 rounded mt-1 font-mono">TUHH (哈堡工大)</span>
-                  </div>
-
-                  <div className="absolute left-[41%] top-[27%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    <span className="text-[10px] bg-slate-950/80 text-emerald-300 px-1.5 py-0.5 rounded mt-1 font-mono">UKE (漢堡醫學系)</span>
-                  </div>
-
-                  {/* 地區參考 */}
-                  <div className="absolute top-4 left-4 text-[10px] text-slate-500 font-mono">
-                    NORTH / NORDERSTEDT
-                  </div>
-                  <div className="absolute bottom-4 left-4 text-[10px] text-slate-500 font-mono">
-                    SOUTH / HARBURG (TU)
-                  </div>
-
-                  {/* 宿舍定位座標 */}
-                  {filteredDorms.map(dorm => {
-                    const isSelected = selectedDormDetail?.id === dorm.id;
-                    const isFav = favorites.includes(dorm.id);
-                    return (
-                      <button
-                        key={dorm.id}
-                        onClick={() => setSelectedDormDetail(dorm)}
-                        style={{ left: `${dorm.mapX}%`, top: `${dorm.mapY}%` }}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 group z-10"
-                      >
-                        {/* 針腳外圈 */}
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                          isSelected 
-                            ? 'bg-blue-500 text-white scale-125 ring-4 ring-blue-500/20' 
-                            : isFav
-                            ? 'bg-rose-500 text-white hover:scale-110'
-                            : 'bg-slate-800 text-slate-300 border border-slate-600 hover:bg-slate-700 hover:text-white'
-                        }`}>
-                          <span className="text-[9px] font-bold">€</span>
-                        </div>
-                        
-                        {/* 懸浮預覽標籤 */}
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-950 text-white text-xs px-2 py-1.5 rounded-md shadow-xl whitespace-nowrap z-20">
-                          <p className="font-bold">{dorm.name}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">月租: €{dorm.minPrice} ~ €{dorm.maxPrice}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* 地圖互動說明面板 */}
-                <div className="flex flex-col justify-between">
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-4">
-                    <h4 className="font-bold text-sm text-slate-700 flex items-center gap-1.5">
-                      <Info size={16} className="text-slate-500" /> 操作說明
-                    </h4>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      地圖內已排除不符「左側篩選條件」之宿處。點擊圖中圓圈針腳，即可在下方或右側查閱宿舍之完整配套設施與詳細簡介。
-                    </p>
-                    <div className="flex flex-col gap-2 pt-2 border-t border-slate-200 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                        <span className="text-slate-600">已選取查看宿處</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-rose-500"></span>
-                        <span className="text-slate-600">已加入收藏之宿處</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-slate-800"></span>
-                        <span className="text-slate-600">其餘符合過濾宿處</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 顯示地圖當前選定宿舍簡要 */}
-                  {selectedDormDetail && !selectedDormDetail.compareMode && (
-                    <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-4 flex flex-col gap-2">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-bold text-sm text-slate-950">{selectedDormDetail.name}</h4>
-                        <button onClick={() => setSelectedDormDetail(null)} className="text-slate-400 hover:text-slate-600">
-                          <X size={14} />
-                        </button>
-                      </div>
-                      <p className="text-xs text-slate-600 line-clamp-2">{selectedDormDetail.desc}</p>
-                      <button 
-                        onClick={() => setSelectedDormDetail(selectedDormDetail)}
-                        className="text-xs text-blue-600 font-semibold self-start hover:underline mt-1"
-                      >
-                        顯示全面細節資料
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-              </div>
-            </div>
-          )}
-        </main>
-
-      </div>
-
-      {/* ==================== 宿舍詳細資料模組視窗 (Modal) ==================== */}
-      {selectedDormDetail && !selectedDormDetail.compareMode && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
             
-            {/* 標題欄 */}
-            <div className="bg-slate-900 text-white p-6 relative">
+            <div className="flex items-center gap-2 self-stretch md:self-auto bg-slate-100 p-1 rounded-xl">
               <button 
-                onClick={() => setSelectedDormDetail(null)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-md">
-                {selectedDormDetail.zone}
-              </span>
-              <h3 className="text-2xl font-bold mt-2">{selectedDormDetail.name}</h3>
-            </div>
-
-            {/* 內容卷軸區 */}
-            <div className="p-6 overflow-y-auto flex flex-col gap-5">
-              
-              {/* 基本卡牌資訊 */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-[11px] text-slate-400 block">租金範圍 /月</span>
-                  <span className="text-md font-mono font-bold text-blue-700">
-                    €{selectedDormDetail.minPrice} {selectedDormDetail.maxPrice > selectedDormDetail.minPrice ? `~ €${selectedDormDetail.maxPrice}` : ''}
-                  </span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-[11px] text-slate-400 block">周遭環境氣氛</span>
-                  <span className="text-md font-semibold text-slate-700">{selectedDormDetail.vibe}</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-[11px] text-slate-400 block">日常生活機能</span>
-                  <span className="text-md font-semibold text-slate-700">{selectedDormDetail.convenience}</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-[11px] text-slate-400 block">特殊需求標記</span>
-                  <span className="text-md font-semibold text-slate-700">{selectedDormDetail.special || '一般正常房型'}</span>
-                </div>
-              </div>
-
-              {/* 簡介與說明 */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">宿處生活導覽</h4>
-                <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  {selectedDormDetail.desc}
-                </p>
-              </div>
-
-              {/* 設施清單 */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">可使用公共設施 / 房內配置</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedDormDetail.facilities.map(fac => (
-                    <span 
-                      key={fac} 
-                      className="text-xs bg-slate-100 border border-slate-200/50 px-3 py-1.5 rounded-lg text-slate-700 flex items-center gap-1.5"
-                    >
-                      {facilityIcons[fac]}
-                      {fac}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* 底部按鈕 */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
-              <button
-                onClick={() => {
-                  toggleFavorite(selectedDormDetail.id);
-                }}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                  favorites.includes(selectedDormDetail.id)
-                    ? 'bg-red-500 text-white hover:bg-red-600 shadow-sm'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                onClick={() => setActiveTab('list')}
+                className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'list' 
+                    ? 'bg-white text-blue-600 shadow-sm' 
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Heart size={16} fill={favorites.includes(selectedDormDetail.id) ? "currentColor" : "none"} />
-                {favorites.includes(selectedDormDetail.id) ? '從收藏夾移除' : '收藏此宿舍'}
+                <List size={16} /> 列表探索
               </button>
               <button 
-                onClick={() => setSelectedDormDetail(null)}
-                className="flex-1 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors"
+                onClick={() => setActiveTab('map')}
+                className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'map' 
+                    ? 'bg-white text-blue-600 shadow-sm' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                關閉視窗
+                <Map size={16} /> 地圖分佈
               </button>
             </div>
+          </header>
 
-          </div>
-        </div>
-      )}
-
-      {/* ==================== 宿舍橫向對比模組視窗 (Comparison Modal) ==================== */}
-      {selectedDormDetail && selectedDormDetail.compareMode && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
-            
-            {/* 標題欄 */}
-            <div className="bg-slate-900 text-white p-5 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <GitCompare size={20} className="text-blue-400" />
-                <h3 className="text-lg font-bold">宿處對照比較表 ({compareList.length}/3)</h3>
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+            <aside className="w-full lg:w-[350px] bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-6 h-fit shrink-0">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                  篩選條件
+                </h2>
+                <button 
+                  onClick={resetFilters}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                >
+                  重設所有條件
+                </button>
               </div>
-              <button 
-                onClick={() => setSelectedDormDetail(null)}
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
 
-            {/* 對比內容表格 */}
-            <div className="p-6 overflow-x-auto">
-              {compareList.length === 0 ? (
-                <div className="text-center py-10 text-slate-400">
-                  目前比較名單內無任何宿舍，請先於清單內點選「加入對照」
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-slate-700">搜尋關鍵字</label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="輸入宿舍名稱、位置、機能..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:bg-white transition-all"
+                  />
+                  <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-3 text-slate-400 hover:text-slate-600">
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Euro size={16} className="text-slate-500" /> 最大預算 (月租)
+                  </label>
+                  <span className="font-mono text-sm bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg font-bold">
+                    €{maxPrice}
+                  </span>
+                </div>
+                <input 
+                  type="range" 
+                  min="310" max="900" step="10" 
+                  value={maxPrice} 
+                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-100 rounded-lg"
+                />
+                <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+                  <span>€310</span>
+                  <span>€900</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                  <MapPin size={16} className="text-slate-500" /> 環境與氛圍
+                </label>
+                <select 
+                  value={selectedVibe} 
+                  onChange={(e) => setSelectedVibe(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors"
+                >
+                  <option value="All">顯示全部環境</option>
+                  {allVibes.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Coffee size={16} className="text-slate-500" /> 生活便利性
+                </label>
+                <select 
+                  value={selectedConvenience} 
+                  onChange={(e) => setSelectedConvenience(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors"
+                >
+                  <option value="All">顯示所有便利度</option>
+                  {allConvenience.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Users size={16} className="text-slate-500" /> 特殊需求房型
+                </label>
+                <select 
+                  value={specialReq} 
+                  onChange={(e) => setSpecialReq(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors"
+                >
+                  <option value="All">無特定限制</option>
+                  <option value="限女性">女性限定 (Armgartstraße)</option>
+                  <option value="攜子女性">有孩童之女性 (Bornstraße)</option>
+                  <option value="音樂專長">附帶鋼琴音樂室 (Esther Bejarano)</option>
+                  <option value="獨立衛浴">附私人小衛浴與廚房 (Helmut Schmidt)</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2.5">
+                <label className="text-sm font-semibold text-slate-700">公共與配套設施</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {allFacilities.map(fac => {
+                    const isSelected = selectedFacilities.includes(fac);
+                    return (
+                      <button
+                        key={fac}
+                        onClick={() => toggleFacility(fac)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs text-left transition-all border flex items-center gap-1.5 ${
+                          isSelected 
+                            ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium' 
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className={isSelected ? 'text-blue-600' : 'text-slate-400'}>
+                          {facilityIcons[fac]}
+                        </span>
+                        <span className="truncate">{fac}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </aside>
+
+            <main className="flex-1 flex flex-col gap-6">
+              {compareList.length > 0 && (
+                <div className="bg-slate-900 text-white px-5 py-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-md">
+                  <div className="flex items-center gap-2">
+                    <GitCompare size={20} className="text-blue-400" />
+                    <div>
+                      <h4 className="font-semibold text-sm">比較欄位中 ({compareList.length}/3)</h4>
+                      <p className="text-xs text-slate-400">正在比較：{compareList.map(d => d.name).join(', ')}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedDormDetail({ compareMode: true })}
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    開啟對照面板
+                  </button>
+                </div>
+              )}
+
+              {activeTab === 'list' ? (
+                <>
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-800 text-lg">
+                        {searchQuery || selectedFacilities.length > 0 || selectedVibe !== 'All' || selectedConvenience !== 'All' || specialReq !== 'All' ? '已篩選宿處' : '全部宿處清單'}
+                      </h3>
+                      <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                        {filteredDorms.length} 間
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">由低價至高價排列</p>
+                  </div>
+
+                  {filteredDorms.length === 0 ? (
+                    <div className="bg-white p-16 rounded-2xl border border-slate-100 text-center flex flex-col items-center justify-center text-slate-500 shadow-sm">
+                      <div className="p-4 bg-slate-50 rounded-full text-slate-300 mb-4">
+                        <Search size={36} />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-800">找不到相符的宿舍</h3>
+                      <p className="text-sm text-slate-400 mt-1 max-w-sm">
+                        試著調高月租預算上限、清空特定設施勾選，或將生活便利性改設為「顯示所有便利度」。
+                      </p>
+                      <button 
+                        onClick={resetFilters} 
+                        className="mt-5 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+                      >
+                        重設過濾器
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {filteredDorms.map(dorm => {
+                        const isFav = favorites.includes(dorm.id);
+                        const isComparing = compareList.some(item => item.id === dorm.id);
+                        return (
+                          <div 
+                            key={dorm.id} 
+                            className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative"
+                          >
+                            <div>
+                              <div className="flex justify-between items-start gap-4 mb-2">
+                                <div>
+                                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
+                                    {dorm.name}
+                                  </h3>
+                                  <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                    <MapPin size={10} /> {dorm.zone}
+                                  </p>
+                                </div>
+                                
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button 
+                                    onClick={() => toggleFavorite(dorm.id)}
+                                    className={`p-2 rounded-full transition-colors ${
+                                      isFav 
+                                        ? 'bg-red-50 text-red-500 hover:bg-red-100' 
+                                        : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                                    }`}
+                                    title="加入收藏"
+                                  >
+                                    <Heart size={16} fill={isFav ? "currentColor" : "none"} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mb-3.5">
+                                <span className="text-xs font-mono font-bold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md">
+                                  €{dorm.minPrice} {dorm.maxPrice > dorm.minPrice ? `~ ${dorm.maxPrice}` : '/月'}
+                                </span>
+                                <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">
+                                  環境: {dorm.vibe}
+                                </span>
+                                <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${
+                                  dorm.convenience === '極佳' || dorm.convenience === '佳' 
+                                    ? 'bg-emerald-50 text-emerald-700' 
+                                    : dorm.convenience === '普通' 
+                                    ? 'bg-amber-50 text-amber-700' 
+                                    : 'bg-rose-50 text-rose-700'
+                                }`}>
+                                  機能: {dorm.convenience}
+                                </span>
+                                {dorm.special && (
+                                  <span className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-semibold">
+                                    {dorm.special}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mb-5">
+                                {dorm.desc}
+                              </p>
+                            </div>
+
+                            <div className="border-t border-slate-100 pt-4 mt-auto">
+                              <div className="flex justify-between items-center">
+                                <button
+                                  onClick={() => toggleCompare(dorm)}
+                                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+                                    isComparing 
+                                      ? 'bg-slate-900 text-white' 
+                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                  }`}
+                                >
+                                  <GitCompare size={14} />
+                                  {isComparing ? '已加入比較' : '加入對照'}
+                                </button>
+                                
+                                <button 
+                                  onClick={() => setSelectedDormDetail(dorm)}
+                                  className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-0.5"
+                                >
+                                  詳細資訊 <ChevronRight size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               ) : (
-                <table className="w-full min-w-[600px] border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="text-left py-3 text-slate-400 font-medium w-1/4">比較欄位</th>
-                      {compareList.map(dorm => (
-                        <th key={dorm.id} className="text-left py-3 font-bold text-slate-900 w-1/4 relative">
-                          <div className="flex justify-between items-center pr-2">
-                            <span>{dorm.name}</span>
-                            <button 
-                              onClick={() => toggleCompare(dorm)}
-                              className="p-1 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                              title="移除"
-                            >
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col gap-5">
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                      漢堡地理分布模擬圖
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">互動示意：圓圈表示學生宿處(點擊可檢視)，虛線色塊代表主要大專院校校區位置。</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 relative w-full aspect-[4/3] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 select-none">
+                      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="50%" cy="38%" rx="20" ry="15" className="fill-slate-800" />
+                        <path d="M-10 320 C 150 320, 250 280, 500 280 C 650 280, 750 320, 900 320" fill="none" stroke="#1e293b" strokeWidth="24" strokeLinecap="round" />
+                        <path d="M-10 320 C 150 320, 250 280, 500 280 C 650 280, 750 320, 900 320" fill="none" stroke="#334155" strokeWidth="8" strokeLinecap="round" />
+                      </svg>
+
+                      <div className="absolute left-[47%] top-[39%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80">
+                        <span className="w-4 h-4 rounded-full border border-dashed border-blue-500 animate-ping absolute"></span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                        <span className="text-[10px] bg-slate-950/80 text-blue-300 px-1.5 py-0.5 rounded mt-1 font-mono">UHH (漢堡大學)</span>
+                      </div>
+
+                      <div className="absolute left-[58%] top-[45%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80">
+                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                        <span className="text-[10px] bg-slate-950/80 text-indigo-300 px-1.5 py-0.5 rounded mt-1 font-mono">HAW (應用科學大)</span>
+                      </div>
+
+                      <div className="absolute left-[47%] top-[83%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        <span className="text-[10px] bg-slate-950/80 text-amber-300 px-1.5 py-0.5 rounded mt-1 font-mono">TUHH (哈堡工大)</span>
+                      </div>
+
+                      <div className="absolute left-[41%] top-[27%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-80">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <span className="text-[10px] bg-slate-950/80 text-emerald-300 px-1.5 py-0.5 rounded mt-1 font-mono">UKE (漢堡醫學系)</span>
+                      </div>
+
+                      <div className="absolute top-4 left-4 text-[10px] text-slate-500 font-mono">NORTH / NORDERSTEDT</div>
+                      <div className="absolute bottom-4 left-4 text-[10px] text-slate-500 font-mono">SOUTH / HARBURG (TU)</div>
+
+                      {filteredDorms.map(dorm => {
+                        const isSelected = selectedDormDetail?.id === dorm.id;
+                        const isFav = favorites.includes(dorm.id);
+                        return (
+                          <button
+                            key={dorm.id}
+                            onClick={() => setSelectedDormDetail(dorm)}
+                            style={{ left: `${dorm.mapX}%`, top: `${dorm.mapY}%` }}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 group z-10"
+                          >
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                              isSelected 
+                                ? 'bg-blue-500 text-white scale-125 ring-4 ring-blue-500/20' 
+                                : isFav
+                                ? 'bg-rose-500 text-white hover:scale-110'
+                                : 'bg-slate-800 text-slate-300 border border-slate-600 hover:bg-slate-700 hover:text-white'
+                            }`}>
+                              <span className="text-[9px] font-bold">€</span>
+                            </div>
+                            
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-950 text-white text-xs px-2 py-1.5 rounded-md shadow-xl whitespace-nowrap z-20">
+                              <p className="font-bold">{dorm.name}</p>
+                              <p className="text-[10px] text-slate-400 font-mono">月租: €{dorm.minPrice} ~ €{dorm.maxPrice}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex flex-col justify-between">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-4">
+                        <h4 className="font-bold text-sm text-slate-700 flex items-center gap-1.5">
+                          <Info size={16} className="text-slate-500" /> 操作說明
+                        </h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          地圖內已排除不符「左側篩選條件」之宿處。點擊圖中圓圈針腳，即可在下方或右側查閱宿舍之完整配套設施與詳細簡介。
+                        </p>
+                        <div className="flex flex-col gap-2 pt-2 border-t border-slate-200 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                            <span className="text-slate-600">已選取查看宿處</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-rose-500"></span>
+                            <span className="text-slate-600">已加入收藏之宿處</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-slate-800"></span>
+                            <span className="text-slate-600">其餘符合過濾宿處</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {selectedDormDetail && !selectedDormDetail.compareMode && (
+                        <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-4 flex flex-col gap-2">
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-bold text-sm text-slate-950">{selectedDormDetail.name}</h4>
+                            <button onClick={() => setSelectedDormDetail(null)} className="text-slate-400 hover:text-slate-600">
                               <X size={14} />
                             </button>
                           </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-3 text-slate-500 font-semibold">月租估算</td>
-                      {compareList.map(dorm => (
-                        <td key={dorm.id} className="py-3 font-mono font-bold text-blue-600">
-                          €{dorm.minPrice} ~ {dorm.maxPrice}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-3 text-slate-500 font-semibold">校區分佈</td>
-                      {compareList.map(dorm => (
-                        <td key={dorm.id} className="py-3 text-slate-600">
-                          {dorm.zone}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-3 text-slate-500 font-semibold">環境氣氛</td>
-                      {compareList.map(dorm => (
-                        <td key={dorm.id} className="py-3 text-slate-600">
-                          {dorm.vibe}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-3 text-slate-500 font-semibold">生活機能</td>
-                      {compareList.map(dorm => (
-                        <td key={dorm.id} className="py-3">
-                          <span className={`px-2 py-0.5 rounded text-xs ${
-                            dorm.convenience === '極佳' || dorm.convenience === '佳' 
-                              ? 'bg-emerald-50 text-emerald-700' 
-                              : dorm.convenience === '普通' 
-                              ? 'bg-amber-50 text-amber-700' 
-                              : 'bg-rose-50 text-rose-700'
-                          }`}>
-                            {dorm.convenience}
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-3 text-slate-500 font-semibold">特殊要求房型</td>
-                      {compareList.map(dorm => (
-                        <td key={dorm.id} className="py-3 text-slate-600 text-xs font-semibold">
-                          {dorm.special || '無特定條件'}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-3 text-slate-500 font-semibold">簡述介紹</td>
-                      {compareList.map(dorm => (
-                        <td key={dorm.id} className="py-3 text-slate-500 text-xs leading-relaxed pr-2">
-                          {dorm.desc}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-slate-500 font-semibold">公共配套設施</td>
-                      {compareList.map(dorm => (
-                        <td key={dorm.id} className="py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {allFacilities.map(fac => {
-                              const hasFac = dorm.facilities.includes(fac);
-                              return (
-                                <span 
-                                  key={fac} 
-                                  className={`text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 ${
-                                    hasFac 
-                                      ? 'bg-blue-50 text-blue-600 border border-blue-100' 
-                                      : 'bg-slate-50 text-slate-300 line-through'
-                                  }`}
-                                >
-                                  {facilityIcons[fac]}
-                                  {fac}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
+                          <p className="text-xs text-slate-600 line-clamp-2">{selectedDormDetail.desc}</p>
+                          <button 
+                            onClick={() => setSelectedDormDetail(selectedDormDetail)}
+                            className="text-xs text-blue-600 font-semibold self-start hover:underline mt-1"
+                          >
+                            顯示全面細節資料
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-100 text-right">
-              <button 
-                onClick={() => setSelectedDormDetail(null)}
-                className="px-5 py-2 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors"
-              >
-                關閉對照
-              </button>
-            </div>
-
+            </main>
           </div>
+
+          {selectedDormDetail && !selectedDormDetail.compareMode && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+                <div className="bg-slate-900 text-white p-6 relative">
+                  <button 
+                    onClick={() => setSelectedDormDetail(null)}
+                    className="absolute top-5 right-5 text-slate-400 hover:text-white transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-md">
+                    {selectedDormDetail.zone}
+                  </span>
+                  <h3 className="text-2xl font-bold mt-2">{selectedDormDetail.name}</h3>
+                </div>
+
+                <div className="p-6 overflow-y-auto flex flex-col gap-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <span className="text-[11px] text-slate-400 block">租金範圍 /月</span>
+                      <span className="text-md font-mono font-bold text-blue-700">
+                        €{selectedDormDetail.minPrice} {selectedDormDetail.maxPrice > selectedDormDetail.minPrice ? `~ €${selectedDormDetail.maxPrice}` : ''}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <span className="text-[11px] text-slate-400 block">周遭環境氣氛</span>
+                      <span className="text-md font-semibold text-slate-700">{selectedDormDetail.vibe}</span>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <span className="text-[11px] text-slate-400 block">日常生活機能</span>
+                      <span className="text-md font-semibold text-slate-700">{selectedDormDetail.convenience}</span>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <span className="text-[11px] text-slate-400 block">特殊需求標記</span>
+                      <span className="text-md font-semibold text-slate-700">{selectedDormDetail.special || '一般正常房型'}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">宿處生活導覽</h4>
+                    <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      {selectedDormDetail.desc}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">可使用公共設施 / 房內配置</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedDormDetail.facilities.map(fac => (
+                        <span 
+                          key={fac} 
+                          className="text-xs bg-slate-100 border border-slate-200/50 px-3 py-1.5 rounded-lg text-slate-700 flex items-center gap-1.5"
+                        >
+                          {facilityIcons[fac]}
+                          {fac}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+                  <button
+                    onClick={() => {
+                      toggleFavorite(selectedDormDetail.id);
+                    }}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                      favorites.includes(selectedDormDetail.id)
+                        ? 'bg-red-500 text-white hover:bg-red-600 shadow-sm'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Heart size={16} fill={favorites.includes(selectedDormDetail.id) ? "currentColor" : "none"} />
+                    {favorites.includes(selectedDormDetail.id) ? '從收藏夾移除' : '收藏此宿舍'}
+                  </button>
+                  <button 
+                    onClick={() => setSelectedDormDetail(null)}
+                    className="flex-1 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors"
+                  >
+                    關閉視窗
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedDormDetail && selectedDormDetail.compareMode && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+                <div className="bg-slate-900 text-white p-5 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <GitCompare size={20} className="text-blue-400" />
+                    <h3 className="text-lg font-bold">宿處對照比較表 ({compareList.length}/3)</h3>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedDormDetail(null)}
+                    className="text-slate-400 hover:text-white transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-6 overflow-x-auto">
+                  {compareList.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400">
+                      目前比較名單內無任何宿舍，請先於清單內點選「加入對照」
+                    </div>
+                  ) : (
+                    <table className="w-full min-w-[600px] border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          <th className="text-left py-3 text-slate-400 font-medium w-1/4">比較欄位</th>
+                          {compareList.map(dorm => (
+                            <th key={dorm.id} className="text-left py-3 font-bold text-slate-900 w-1/4 relative">
+                              <div className="flex justify-between items-center pr-2">
+                                <span>{dorm.name}</span>
+                                <button 
+                                  onClick={() => toggleCompare(dorm)}
+                                  className="p-1 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                                  title="移除"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-slate-100">
+                          <td className="py-3 text-slate-500 font-semibold">月租估算</td>
+                          {compareList.map(dorm => (
+                            <td key={dorm.id} className="py-3 font-mono font-bold text-blue-600">
+                              €{dorm.minPrice} ~ {dorm.maxPrice}
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-slate-100">
+                          <td className="py-3 text-slate-500 font-semibold">校區分佈</td>
+                          {compareList.map(dorm => (
+                            <td key={dorm.id} className="py-3 text-slate-600">
+                              {dorm.zone}
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-slate-100">
+                          <td className="py-3 text-slate-500 font-semibold">環境氣氛</td>
+                          {compareList.map(dorm => (
+                            <td key={dorm.id} className="py-3 text-slate-600">
+                              {dorm.vibe}
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-slate-100">
+                          <td className="py-3 text-slate-500 font-semibold">生活機能</td>
+                          {compareList.map(dorm => (
+                            <td key={dorm.id} className="py-3">
+                              <span className={`px-2 py-0.5 rounded text-xs ${
+                                dorm.convenience === '極佳' || dorm.convenience === '佳' 
+                                  ? 'bg-emerald-50 text-emerald-700' 
+                                  : dorm.convenience === '普通' 
+                                  ? 'bg-amber-50 text-amber-700' 
+                                  : 'bg-rose-50 text-rose-700'
+                              }`}>
+                                {dorm.convenience}
+                              </span>
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-slate-100">
+                          <td className="py-3 text-slate-500 font-semibold">特殊要求房型</td>
+                          {compareList.map(dorm => (
+                            <td key={dorm.id} className="py-3 text-slate-600 text-xs font-semibold">
+                              {dorm.special || '無特定條件'}
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-slate-100">
+                          <td className="py-3 text-slate-500 font-semibold">簡述介紹</td>
+                          {compareList.map(dorm => (
+                            <td key={dorm.id} className="py-3 text-slate-500 text-xs leading-relaxed pr-2">
+                              {dorm.desc}
+                            </td>
+                          ))}
+                        </tr>
+                        <tr>
+                          <td className="py-3 text-slate-500 font-semibold">公共配套設施</td>
+                          {compareList.map(dorm => (
+                            <td key={dorm.id} className="py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {allFacilities.map(fac => {
+                                  const hasFac = dorm.facilities.includes(fac);
+                                  return (
+                                    <span 
+                                      key={fac} 
+                                      className={`text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                                        hasFac 
+                                          ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                                          : 'bg-slate-50 text-slate-300 line-through'
+                                      }`}
+                                    >
+                                      {facilityIcons[fac]}
+                                      {fac}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                <div className="p-4 bg-slate-50 border-t border-slate-100 text-right">
+                  <button 
+                    onClick={() => setSelectedDormDetail(null)}
+                    className="px-5 py-2 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors"
+                  >
+                    關閉對照
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  );
-}
+      );
+    }
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
